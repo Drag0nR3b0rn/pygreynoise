@@ -1,5 +1,8 @@
-import os
-import configparser
+from box import Box
+from configparser import ConfigParser
+import itertools
+import json
+from os import path
 import requests
 
 
@@ -17,53 +20,62 @@ class GreyNoiseNotFound(GreyNoiseError):
 
 
 class GreyNoise(object):
-    """ Main GreyNoise class"""
-    def __init__(self):
-        self.ua = "PyGreyNoise"
-        self.base_url = "http://api.greynoise.io:8888/v1/"
-        self.key = None
-        if os.path.isfile(os.path.join(os.path.expanduser("~"), ".greynoise")):
-            config = configparser.ConfigParser()
-            config.read(os.path.join(os.path.expanduser("~"), ".greynoise"))
-            try:
-                self.key = config['GreyNoise']['key']
-            except KeyError:
-                # bad config format
-                pass
+    # gn = GreyNoise()
+    # gn.research.ja3.fingerprint(...)
+    # gn.research.ja3.ip(...)
+    # gn.research.combination(...)
+    # gn.noise.context(...)
 
-    def _request(self, path, params, type="GET"):
-        headers = {'User-Agent': self.ua}
-        if type == "GET":
-            r = requests.get(
-                self.base_url + path,
-                headers=headers,
-                params=params
-            )
-        else:
-            if self.key:
-                params["key"] = self.key
-            r = requests.post(
-                    self.base_url + path,
-                    headers=headers,
-                    data=params
-            )
+    def __init__(self, key=None, enterprise=False, store_key=False):
+        self._ua = 'PyGreyNoise/2'
+        self._base = 'https://{0}api.greynoise.io/v2'.format('enterprise.' if enterprise else '')
+        # Set the API key, if no API key was specified - try to load it from the configuration file
+        config_file = path.join(path.expanduser('~'), '.greynoise')
+        config = ConfigParser(default_section='GreyNoise', defaults={'key': key})
+        config.read(config_file)
+        self.key = config['GreyNoise']['key']
+        if store_key:
+            with open(config_file, 'w') as fp:
+                config.write(fp)
 
-        if r.status_code == 200:
-            if r.json()["status"] in ["ok", "exists"]:
-                return r.json()
+        # TODO: Add "magic" to refresh the supported magic (after Andrew adds WSDL or someother API description)
+        self._methods = Box({
+            'research': {
+                'combination': self._combination,
+                'ja3': {
+                    'fingerprint': lambda query: self._query('research/ja3/fingerprint', query),
+                    'ip': lambda query: self._query('research/ja3/ip', query)
+                },
+                'tag': {
+                    'list': lambda: self._query('research/tag/list')
+                }
+            },
+            'noise': {
+                'context': lambda query: self._query('noise/context', query)
+            }
+        })
+
+
+
+    def _query(self, endpoint, query='', data={}, method='GET'):
+        return requests.request(method, 
+                '{0}/{1}{2}'.format(self._base, endpoint, '/{0}'.format(query) if query else ''), 
+                headers={
+                    'key': self.key,
+                    'User-Agent': self._ua
+                },
+                data=data).json()
+
+
+    def _combination(self, *query, start=0, iterable=True):
+        for i in itertools.count():
+            r = self._query('research/combination', data=json.dumps({'query': query, 'offset': (start + i) * 100}))
+            if not iterable or r.get('complete', True):
+                return r['ips']
             else:
-                if r.json()["status"] == "unknown":
-                    raise GreyNoiseNotFound()
-                else:
-                    raise GreyNoiseError("Invalid status: %s" % r.json()["status"])
-        else:
-            raise GreyNoiseError("Invalid HTTP return code %i" % r.status_code)
+                yield r['ips']
 
-    def tags(self):
-        return self._request('query/list', {})["tags"]
-
-    def query_ip(self, ip):
-        return self._request('query/ip', {'ip': ip}, type="POST")['records']
-
-    def query_tag(self, tag):
-        return self._request('query/tag', {'tag': tag}, type="POST")['records']
+    
+    def __getattr__(self, name):
+        return self._methods[name]
+    
