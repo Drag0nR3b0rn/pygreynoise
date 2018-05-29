@@ -51,8 +51,9 @@ class GreyNoise(object):
                     'ip': lambda query: self._query('research/ja3/ip', query)
                 },
                 'tag': {
-                    'combination': self._combination,
-                    'list': lambda: self._query('research/tag/list')
+                    'combination': lambda *query: self._query('research/tag/combination', data=json.dumps({'query': query})),
+                    'list': lambda: self._query('research/tag/list'),
+                    'single': lambda tag: self._query('research/tag/single', data=json.dumps({'tag': tag})),
                 }
             },
             'enterprise': {
