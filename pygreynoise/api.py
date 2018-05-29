@@ -63,8 +63,7 @@ class GreyNoise(object):
         })
 
 
-
-   def _logger(self, level=logging.INFO):
+    def _logger(self, level=logging.INFO):
         """Create a logger to be used between processes.
         :returns: Logging instance.
         """
@@ -72,8 +71,7 @@ class GreyNoise(object):
         logger = logging.getLogger(self._LOG_NAME)
         logger.setLevel(level)
         shandler = logging.StreamHandler(sys.stdout)
-        fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():'
-        fmt += '%(lineno)d %(asctime)s\033[0m| %(message)s'
+        fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():%(lineno)d %(asctime)s\033[0m| %(message)s'
         shandler.setFormatter(logging.Formatter(fmt))
         logger.addHandler(shandler)
         return logger
@@ -88,6 +86,8 @@ class GreyNoise(object):
                     'User-Agent': self._ua
                 },
                 data=data)
+        except Exception:
+            pass
 
         return res.json()
 
