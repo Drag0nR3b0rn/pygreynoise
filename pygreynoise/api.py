@@ -31,10 +31,9 @@ class GreyNoise(object):
     _BASE_URL = 'https://research.api.greynoise.io/v2'
     _LOG_NAME = 'GreyNoise'
 
-    def __init__(self, key=None, enterprise=False, store_key=False):
+    def __init__(self, key=None, store_key=False):
         self._ua = 'PyGreyNoise/2'
         self._log = self._logger(logging.DEBUG)
-        # self._base = 'https://{0}api.greynoise.io/v2'.format('enterprise.' if enterprise else '')
         # Set the API key, if no API key was specified - try to load it from the configuration file
         config_file = path.join(path.expanduser('~'), '.greynoise')
         config = ConfigParser(default_section='GreyNoise', defaults={'key': key})
