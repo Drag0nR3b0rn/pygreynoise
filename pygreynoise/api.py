@@ -71,7 +71,7 @@ class GreyNoise(object):
 
         logger = logging.getLogger(self._LOG_NAME)
         logger.setLevel(level)
-        shandler = logging.StreamHandler(sys.stdout)  # FIXME: Is `sys` really needed here?
+        shandler = logging.StreamHandler()
         fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():%(lineno)d %(asctime)s\033[0m| %(message)s'
         shandler.setFormatter(logging.Formatter(fmt))
         logger.addHandler(shandler)
@@ -79,8 +79,8 @@ class GreyNoise(object):
 
         
     def _query(self, endpoint, query='', data={}, method='GET'):
-        uri = '/'.join(self._BASE_URL, endpoint, query)
-        logging.debug('Trying to query %{uri} with %{data} as body', uri=uri, data=data)
+        uri = '/'.join([self._BASE_URL, endpoint, query])
+        self._log.debug('Trying to query %s with %s as body', uri, data)
         try:
             res = requests.request(method, uri, headers={
                     'key': self.key,
