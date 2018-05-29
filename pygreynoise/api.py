@@ -78,7 +78,7 @@ class GreyNoise(object):
 
         
     def _query(self, endpoint, query='', data={}, method='GET'):
-        uri = '/'.join([self._BASE_URL, endpoint, query])
+        uri = '/'.join([self._BASE_URL, endpoint, query]).strip('/')
         self._log.debug('Trying to query %s with %s as body', uri, data)
         try:
             res = requests.request(method, uri, headers={
@@ -86,6 +86,8 @@ class GreyNoise(object):
                     'User-Agent': self._ua
                 },
                 data=data)
+
+            # TODO: Handle error conditions - code=200, json includes 'error' or 'message'
         except Exception:
             pass
 
