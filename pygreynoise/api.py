@@ -5,6 +5,7 @@ import json
 from os import path
 import requests
 import logging
+import sys
 
 
 class GreyNoiseError(Exception):
@@ -70,7 +71,7 @@ class GreyNoise(object):
 
         logger = logging.getLogger(self._LOG_NAME)
         logger.setLevel(level)
-        shandler = logging.StreamHandler(sys.stdout)
+        shandler = logging.StreamHandler(sys.stdout)  # FIXME: Is `sys` really needed here?
         fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():%(lineno)d %(asctime)s\033[0m| %(message)s'
         shandler.setFormatter(logging.Formatter(fmt))
         logger.addHandler(shandler)
