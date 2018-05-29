@@ -26,9 +26,11 @@ class GreyNoise(object):
     # gn.research.combination(...)
     # gn.noise.context(...)
 
+    _BASE_URL = 'https://research.api.greynoise.io/v2/'
+
     def __init__(self, key=None, enterprise=False, store_key=False):
         self._ua = 'PyGreyNoise/2'
-        self._base = 'https://{0}api.greynoise.io/v2'.format('enterprise.' if enterprise else '')
+        # self._base = 'https://{0}api.greynoise.io/v2'.format('enterprise.' if enterprise else '')
         # Set the API key, if no API key was specified - try to load it from the configuration file
         config_file = path.join(path.expanduser('~'), '.greynoise')
         config = ConfigParser(default_section='GreyNoise', defaults={'key': key})
@@ -41,17 +43,19 @@ class GreyNoise(object):
         # TODO: Add "magic" to refresh the supported magic (after Andrew adds WSDL or someother API description)
         self._methods = Box({
             'research': {
-                'combination': self._combination,
                 'ja3': {
                     'fingerprint': lambda query: self._query('research/ja3/fingerprint', query),
                     'ip': lambda query: self._query('research/ja3/ip', query)
                 },
                 'tag': {
+                    'combination': self._combination,
                     'list': lambda: self._query('research/tag/list')
                 }
             },
-            'noise': {
-                'context': lambda query: self._query('noise/context', query)
+            'enterprise': {
+                'noise': {
+                    'context': lambda query: self._query('enterprise/noise/context', query)
+                }
             }
         })
 
@@ -59,7 +63,7 @@ class GreyNoise(object):
 
     def _query(self, endpoint, query='', data={}, method='GET'):
         return requests.request(method, 
-                '{0}/{1}{2}'.format(self._base, endpoint, '/{0}'.format(query) if query else ''), 
+                '{0}/{1}{2}'.format(self._BASE_URL, endpoint, '/{0}'.format(query) if query else ''), 
                 headers={
                     'key': self.key,
                     'User-Agent': self._ua
