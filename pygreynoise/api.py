@@ -4,6 +4,7 @@ import itertools
 import json
 from os import path
 import requests
+import logging
 
 
 class GreyNoiseError(Exception):
@@ -27,9 +28,11 @@ class GreyNoise(object):
     # gn.noise.context(...)
 
     _BASE_URL = 'https://research.api.greynoise.io/v2/'
+    _LOG_NAME = 'GreyNoise'
 
     def __init__(self, key=None, enterprise=False, store_key=False):
         self._ua = 'PyGreyNoise/2'
+        self._log = self._logger(logging.DEBUG)
         # self._base = 'https://{0}api.greynoise.io/v2'.format('enterprise.' if enterprise else '')
         # Set the API key, if no API key was specified - try to load it from the configuration file
         config_file = path.join(path.expanduser('~'), '.greynoise')
@@ -61,6 +64,21 @@ class GreyNoise(object):
 
 
 
+   def _logger(self, level=logging.INFO):
+        """Create a logger to be used between processes.
+        :returns: Logging instance.
+        """
+
+        logger = logging.getLogger(self._LOG_NAME)
+        logger.setLevel(level)
+        shandler = logging.StreamHandler(sys.stdout)
+        fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():'
+        fmt += '%(lineno)d %(asctime)s\033[0m| %(message)s'
+        shandler.setFormatter(logging.Formatter(fmt))
+        logger.addHandler(shandler)
+        return logger
+
+        
     def _query(self, endpoint, query='', data={}, method='GET'):
         return requests.request(method, 
                 '{0}/{1}{2}'.format(self._BASE_URL, endpoint, '/{0}'.format(query) if query else ''), 
