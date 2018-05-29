@@ -80,13 +80,16 @@ class GreyNoise(object):
 
         
     def _query(self, endpoint, query='', data={}, method='GET'):
-        return requests.request(method, 
-                '{0}/{1}{2}'.format(self._BASE_URL, endpoint, '/{0}'.format(query) if query else ''), 
-                headers={
+        uri = '/'.join(self._BASE_URL, endpoint, query)
+        logging.debug('Trying to query %{uri} with %{data} as body', uri=uri, data=data)
+        try:
+            res = requests.request(method, uri, headers={
                     'key': self.key,
                     'User-Agent': self._ua
                 },
-                data=data).json()
+                data=data)
+
+        return res.json()
 
 
     def _combination(self, *query, start=0, iterable=True):
