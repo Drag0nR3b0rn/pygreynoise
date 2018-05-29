@@ -28,7 +28,7 @@ class GreyNoise(object):
     # gn.research.combination(...)
     # gn.noise.context(...)
 
-    _BASE_URL = 'https://research.api.greynoise.io/v2/'
+    _BASE_URL = 'https://research.api.greynoise.io/v2'
     _LOG_NAME = 'GreyNoise'
 
     def __init__(self, key=None, enterprise=False, store_key=False):
