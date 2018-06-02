@@ -30,6 +30,7 @@ class GreyNoise(object):
 
     _BASE_URL = 'https://research.api.greynoise.io/v2'
     _LOG_NAME = 'GreyNoise'
+    _OK = 'ok'
 
     def __init__(self, key=None, store_key=False):
         self._ua = 'PyGreyNoise/2'
@@ -78,21 +79,36 @@ class GreyNoise(object):
         return logger
 
         
-    def _query(self, endpoint, query='', data={}, method='GET'):
+    def _query(self, endpoint, query='', params={}, data={}, method='GET'):
         uri = '/'.join([self._BASE_URL, endpoint, query]).strip('/')
-        self._log.debug('Trying to query %s with %s as body', uri, data)
+        self._log.debug('Trying to query %s%s%s', uri,
+                '' if not params else params,
+                '' if not data else ' with {0} as body'.format(data)
+            )
         try:
             res = requests.request(method, uri, headers={
                     'key': self.key,
                     'User-Agent': self._ua
                 },
-                data=data)
+                params=params, data=data)
 
-            # TODO: Handle error conditions - code=200, json includes 'error' or 'message'
-        except Exception:
-            pass
+            self._log.debug('Request to %s, returned %s\n%s', res.url, res.headers, res.content)  # TODO: Log the full response
+            res.raise_for_status()  # Make sure no HTTPError occured
+            loaded = res.json()
+            if {'error', 'status'} & loaded.keys() and not loaded.get('status') == self._OK:  # Handle API errors
+                raise GreyNoiseError(loaded.get('error', loaded.get('status')))
+        except requests.HTTPError as error:
+            loaded = res.json()  # For client errors (4xx) we have an JSON body
+            raise GreyNoiseError('{msg} ({endpoint}{data})'.format(
+                msg=loaded.get('error', loaded.get('status', str(error))),
+                endpoint=error.response.url,
+                data='' if not data else '[{0}]'.format(data)
+            ))
+        except Exception as error:  # Wrap & re-raise exceptions
+            # TODO: Do we need this?
+            raise error
 
-        return res.json()
+        return loaded
 
 
     def _combination(self, *query, start=0, iterable=True):
