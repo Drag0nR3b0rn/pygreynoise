@@ -1,4 +1,4 @@
-from box import Box
+from box import Box, BoxKeyError
 from configparser import ConfigParser
 import itertools
 import json
@@ -150,6 +150,12 @@ class GreyNoise(object):
 
     
     def __getattr__(self, name):
-        self._log.debug(name)
-        return self._methods[name]
+        try:
+            return self._methods[name]
+        except BoxKeyError:
+            methods = {}
+            for method in self._methods.values():
+                methods.update(method)
+
+            return Box(methods)[name]
     
