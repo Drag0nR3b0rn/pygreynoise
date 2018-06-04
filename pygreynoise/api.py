@@ -76,7 +76,8 @@ class GreyNoise(object):
                     'combination': lambda *query: self._query('research/tag/combination', data=json.dumps({'query': query})),
                     'list': lambda: self._query('research/tag/list'),
                     'single': lambda tag: self._query('research/tag/single', data=json.dumps({'tag': tag})),
-                }
+                },
+                'ip': lambda ip: self._query('research/ip', validate_ip(ip)),
             },
             'enterprise': {
                 'noise': {
@@ -145,5 +146,6 @@ class GreyNoise(object):
 
     
     def __getattr__(self, name):
+        self._log.debug(name)
         return self._methods[name]
     
