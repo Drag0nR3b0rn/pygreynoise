@@ -21,6 +21,27 @@ class GreyNoiseNotFound(GreyNoiseError):
         GreyNoiseError.__init__(self, self.message)
 
 
+def validate_date(date):
+    import datetime
+    try:
+        datetime.datetime.strptime(date, '%Y-%m-%d')
+        return date
+    except ValueError:
+        raise ValueError('Incorrect data format, should be YYYY-MM-DD')
+
+
+def validate_ip(ip_address, strict=True):
+    import socket
+    try:
+        socket.inet_aton(ip_address)
+        return ip_address
+    except socket.error:
+        if strict:
+            raise ValueError('Invalid IP address')
+
+        return None
+
+
 class GreyNoise(object):
     # gn = GreyNoise()
     # gn.research.ja3.fingerprint(...)
@@ -48,8 +69,8 @@ class GreyNoise(object):
         self._methods = Box({
             'research': {
                 'ja3': {
-                    'fingerprint': lambda query: self._query('research/ja3/fingerprint', query),
-                    'ip': lambda query: self._query('research/ja3/ip', query)
+                    'fingerprint': lambda fingerprint: self._query('research/ja3/fingerprint', fingerprint),
+                    'ip': lambda ip: self._query('research/ja3/ip', validate_ip(ip))
                 },
                 'tag': {
                     'combination': lambda *query: self._query('research/tag/combination', data=json.dumps({'query': query})),
@@ -59,7 +80,10 @@ class GreyNoise(object):
             },
             'enterprise': {
                 'noise': {
-                    'context': lambda query: self._query('enterprise/noise/context', query)
+                    'bulk': lambda date='': self._query('enterprise/noise/bulk', '' if not date else validate_date(date)),
+                    'context': lambda ip: self._query('enterprise/noise/context', validate_ip(ip)),
+                    'multi': lambda *ips: self._query('enterprise/noise/multi/quick', data=json.dumps({'ips': validate_ip(ip) for ip in ips})),
+                    'quick': lambda ip: self._query('enterprise/noise/quick', validate_ip(ip))
                 }
             }
         })
