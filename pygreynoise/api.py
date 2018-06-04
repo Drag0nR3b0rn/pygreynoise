@@ -68,16 +68,20 @@ class GreyNoise(object):
         # TODO: Add "magic" to refresh the supported magic (after Andrew adds WSDL or someother API description)
         self._methods = Box({
             'research': {
+                'ip': lambda ip: self._query('research/ip', validate_ip(ip)),
                 'ja3': {
                     'fingerprint': lambda fingerprint: self._query('research/ja3/fingerprint', fingerprint),
                     'ip': lambda ip: self._query('research/ja3/ip', validate_ip(ip))
+                },
+                'raw': {
+                    'ip': lambda ip: self._query('research/raw/ip', validate_ip(ip)),
+                    'scan': lambda protocol, port: self._query('research/raw/scan', '/'.join([protocol, str(port)]))
                 },
                 'tag': {
                     'combination': lambda *query: self._query('research/tag/combination', data=json.dumps({'query': query})),
                     'list': lambda: self._query('research/tag/list'),
                     'single': lambda tag: self._query('research/tag/single', data=json.dumps({'tag': tag})),
                 },
-                'ip': lambda ip: self._query('research/ip', validate_ip(ip)),
             },
             'enterprise': {
                 'noise': {
